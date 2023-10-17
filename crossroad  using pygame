@@ -1,0 +1,103 @@
+import pygame
+import sys
+import random
+
+# Initialize Pygame
+pygame.init()
+
+# Constants
+WIDTH, HEIGHT = 800, 600
+BG_COLOR = (255, 255, 255)  # White background
+PLAYER_COLOR = (255, 0, 0)  # Red player
+OBSTACLE_COLOR = (0, 0, 0)  # Black obstacles
+PLAYER_SIZE = 30
+PLAYER_SPEED = 5
+OBSTACLE_SPEED = 2
+OBSTACLE_FREQUENCY = 60  # 1 obstacle every 60 frames
+OBSTACLE_SIZE = 30
+
+# Create the game window
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Cross the Road Game")
+
+# Initialize the player's position
+player_x = WIDTH // 2
+player_y = HEIGHT - PLAYER_SIZE
+
+# Initialize game variables
+obstacles = []
+font = pygame.font.Font(None, 36)
+game_over = False
+player_won = False
+
+# Game loop
+clock = pygame.time.Clock()
+
+while not game_over:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            game_over = True
+
+    keys = pygame.key.get_pressed()
+
+    # Move the player
+    if keys[pygame.K_LEFT] and player_x > 0:
+        player_x -= PLAYER_SPEED
+    if keys[pygame.K_RIGHT] and player_x < WIDTH - PLAYER_SIZE:
+        player_x += PLAYER_SPEED
+    if keys[pygame.K_UP] and player_y > 0:
+        player_y -= PLAYER_SPEED
+
+    # Clear the screen
+    screen.fill(BG_COLOR)
+
+    # Draw the player
+    pygame.draw.rect(screen, PLAYER_COLOR, (player_x, player_y, PLAYER_SIZE, PLAYER_SIZE))
+
+    # Create obstacles
+    if random.randint(0, OBSTACLE_FREQUENCY) == 0:
+        obstacle_x = random.randint(0, WIDTH - OBSTACLE_SIZE)
+        obstacle_y = 0
+        obstacles.append([obstacle_x, obstacle_y])
+
+    # Draw and move obstacles
+    for obstacle in obstacles:
+        pygame.draw.rect(screen, OBSTACLE_COLOR, (obstacle[0], obstacle[1], OBSTACLE_SIZE, OBSTACLE_SIZE))
+        obstacle[1] += OBSTACLE_SPEED
+
+        # Check for collisions with obstacles
+        if (
+            player_x < obstacle[0] + OBSTACLE_SIZE
+            and player_x + PLAYER_SIZE > obstacle[0]
+            and player_y < obstacle[1] + OBSTACLE_SIZE
+            and player_y + PLAYER_SIZE > obstacle[1]
+        ):
+            game_over = True
+
+    # Remove obstacles that have gone off the screen
+    obstacles = [obs for obs in obstacles if obs[1] < HEIGHT]
+
+    # Check if the player has reached the top
+    if player_y <= 0:
+        player_won = True
+        game_over = True
+
+    pygame.display.flip()
+    clock.tick(60)
+
+# End of the game
+screen.fill(BG_COLOR)
+if player_won:
+    text = font.render("GAME OVER, CONGRATS!!", True, PLAYER_COLOR)
+else:
+    text = font.render("GAME ENDED", True, PLAYER_COLOR)
+
+text_rect = text.get_rect()
+text_rect.center = (WIDTH // 2, HEIGHT // 2)
+screen.blit(text, text_rect)
+pygame.display.flip()
+
+# Wait for a moment and then exit
+pygame.time.delay(2000)
+pygame.quit()
+sys.exit()
