@@ -1,0 +1,141 @@
+import pygame
+import sys
+import random
+
+# Initialize Pygame
+pygame.init()
+
+# Constants
+WIDTH, HEIGHT = 400, 600
+PLAYER_SIZE = 30
+OBSTACLE_SIZE = 20
+FPS = 30
+TIME_LIMIT = 30  # in seconds
+OBSTACLE_FREQUENCY = 1  # obstacles per second
+BACKGROUND_COLOR = (0, 0, 0)  # Black
+PLAYER_COLOR = (128, 0, 128)  # Purple
+OBSTACLE_COLOR = (255, 182, 193)  # Barbie Pink
+GAME_OVER_COLOR = (0, 0, 0)  # Black
+FONT_COLOR = (255, 255, 255)  # White
+
+# Initialize screen
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Crossroad Game")
+clock = pygame.time.Clock()
+
+# Load fonts
+font = pygame.font.Font(None, 36)
+
+class CrossroadGame:
+    def __init__(self):
+        self.player_pos = [WIDTH // 2, HEIGHT - PLAYER_SIZE * 2]
+        self.obstacles = []
+        self.score = 0
+        self.time_remaining = TIME_LIMIT
+        self.game_over = False
+
+    def draw_player(self):
+        pygame.draw.rect(screen, PLAYER_COLOR, (*self.player_pos, PLAYER_SIZE, PLAYER_SIZE))
+
+    def draw_obstacles(self):
+        for obstacle in self.obstacles:
+            pygame.draw.rect(screen, OBSTACLE_COLOR, (*obstacle, OBSTACLE_SIZE, OBSTACLE_SIZE))
+
+    def move_player(self, keys):
+        # Move player based on arrow keys
+        if keys[pygame.K_LEFT] and self.player_pos[0] > 0:
+            self.player_pos[0] -= 5
+        if keys[pygame.K_RIGHT] and self.player_pos[0] < WIDTH - PLAYER_SIZE:
+            self.player_pos[0] += 5
+        if keys[pygame.K_UP] and self.player_pos[1] > 0:
+            self.player_pos[1] -= 5
+
+    def generate_obstacle(self):
+        # Generate obstacle at random position
+        obstacle = [random.randint(0, WIDTH - OBSTACLE_SIZE), -OBSTACLE_SIZE]
+        self.obstacles.append(obstacle)
+
+    def move_obstacles(self):
+        for obstacle in self.obstacles:
+            obstacle[1] += 5  # Move obstacle downward
+
+    def check_collision(self):
+        for obstacle in self.obstacles:
+            if (
+                self.player_pos[0] < obstacle[0] + OBSTACLE_SIZE and
+                self.player_pos[0] + PLAYER_SIZE > obstacle[0] and
+                self.player_pos[1] < obstacle[1] + OBSTACLE_SIZE and
+                self.player_pos[1] + PLAYER_SIZE > obstacle[1]
+            ):
+                self.game_over = True
+
+    def run(self):
+        running = True
+        clock = pygame.time.Clock()
+
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+
+            keys = pygame.key.get_pressed()
+            self.move_player(keys)
+
+            # Check if it's time to generate a new obstacle
+            if random.random() < OBSTACLE_FREQUENCY / FPS:
+                self.generate_obstacle()
+
+            # Move obstacles
+            self.move_obstacles()
+
+            # Check collision
+            self.check_collision()
+
+            # Clear the screen
+            screen.fill(BACKGROUND_COLOR)
+
+            # Draw player and obstacles
+            self.draw_player()
+            self.draw_obstacles()
+
+            # Display score
+            score_text = font.render(f"Score: {self.score}", True, FONT_COLOR)
+            screen.blit(score_text, (10, 10))
+
+            # Display time remaining
+            time_text = font.render(f"Time: {int(self.time_remaining)}", True, FONT_COLOR)
+            screen.blit(time_text, (WIDTH - 150, 10))
+
+            # Check if the player has reached the top of the screen
+            if self.player_pos[1] <= 0:
+                self.game_over = True
+
+            # Update time remaining
+            self.time_remaining -= 1 / FPS
+
+            # Display game over screen
+            if self.game_over:
+                screen.fill(GAME_OVER_COLOR)
+                if self.player_pos[1] <= 0:
+                    end_text = font.render("GAME WON! CONGRATS!!", True, FONT_COLOR)
+                else:
+                    end_text = font.render("GAME LOST :(", True, FONT_COLOR)
+                screen.blit(end_text, (WIDTH // 2 - 150, HEIGHT // 2 - 50))
+
+            pygame.display.flip()
+
+            # Remove obstacles that are off the screen
+            self.obstacles = [obstacle for obstacle in self.obstacles if obstacle[1] < HEIGHT]
+
+            # Increase score for each avoided obstacle
+            self.score += len(self.obstacles)
+
+            # Cap the frame rate
+            clock.tick(FPS)
+
+        pygame.quit()
+        sys.exit()
+
+if __name__ == "__main__":
+    game = CrossroadGame()
+    game.run()
