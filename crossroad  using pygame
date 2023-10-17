@@ -1,4 +1,4 @@
-import pygame
+```import pygame
 import sys
 import random
 
@@ -101,3 +101,4 @@ pygame.display.flip()
 pygame.time.delay(2000)
 pygame.quit()
 sys.exit()
+```
